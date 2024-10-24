@@ -152,6 +152,16 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
+  annotationContainer: {
+    width: 15,
+    height: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#00658B",
+    borderRadius: 50,
+    borderColor: "white",
+    borderWidth: 2,
+  },
   cardContainer: {
     position: "absolute",
     bottom: 0,
