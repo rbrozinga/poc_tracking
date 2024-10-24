@@ -133,33 +133,14 @@ export default function App() {
         )}
       </Mapbox.MapView>
 
-      {/* Botão para abrir o modal */}
-      <TouchableOpacity
-        style={styles.modalButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.modalButtonText}>Mostrar Distância Percorrida</Text>
-      </TouchableOpacity>
-
       {/* Modal que exibe a distância */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalView}>
-          <Text style={styles.modalText}>
+      <View style={styles.cardContainer}>
+        <View style={styles.card}>
+          <Text style={styles.cardText}>
             Distância Percorrida: {formatDistance(totalDistance)}
           </Text>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setModalVisible(false)}
-          >
-            <Text style={styles.closeButtonText}>Fechar</Text>
-          </TouchableOpacity>
         </View>
-      </Modal>
+      </View>
     </View>
   );
 }
@@ -171,46 +152,23 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  annotationContainer: {
-    width: 18,
-    height: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#00658B",
-    borderRadius: 50,
-    borderColor: "white",
-    borderWidth: 2,
-  },
-  modalButton: {
+  cardContainer: {
     position: "absolute",
-    bottom: 30,
-    left: 20,
-    backgroundColor: "#00658B",
-    padding: 10,
-    borderRadius: 10,
-  },
-  modalButtonText: {
-    color: "#fff",
-    fontSize: 16,
-  },
-  modalView: {
-    flex: 1,
-    justifyContent: "center",
+    bottom: 0,
+    left: 0,
+    right: 0,
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  modalText: {
-    fontSize: 24,
-    color: "#fff",
-    marginBottom: 20,
+
+  card: {
+    backgroundColor: "white",
+    width: "100%",
+    padding: 20,
   },
-  closeButton: {
-    backgroundColor: "#00658B",
-    padding: 10,
-    borderRadius: 10,
-  },
-  closeButtonText: {
-    color: "#fff",
-    fontSize: 16,
+
+  cardText: {
+    fontSize: 18,
+    color: "#001D29",
+    textAlign: "center",
   },
 });
