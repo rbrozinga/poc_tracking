@@ -9,6 +9,11 @@ import {
 } from "react-native";
 import Mapbox from "@rnmapbox/maps";
 import * as Location from "expo-location";
+import * as SQLite from "expo-sqlite";
+const db = SQLite.openDatabaseSync("rotas.db");
+import { useDatabase } from "./useDatabase";
+import { useRoute } from "./rotasDb";
+import { useGeoCoordenates } from "./rotasDb";
 
 Mapbox.setAccessToken(
   "pk.eyJ1IjoiZGFuaWxvbWlndWVsMTQ4NSIsImEiOiJjbGZwYzg2ZzQwdW0yM3FwdG91Z3BoZXVtIn0.FOkbq1V7d5cjKTXgyTQVuQ"
@@ -45,10 +50,18 @@ const formatDistance = (distance) => {
 };
 
 export default function App() {
+  const db = SQLite.openDatabaseSync("rotas.db");
+  const dataBase = useDatabase(db);
   const [routeCoords, setRouteCoords] = useState([]);
   const [currentLocation, setCurrentLocation] = useState([0, 0]);
   const [totalDistance, setTotalDistance] = useState(0); // Distância total percorrida
   const [modalVisible, setModalVisible] = useState(false); // Controle de visibilidade do modal
+
+  const queryRoute = useRoute();
+  const queryGeoCoords = useGeoCoordenates();
+
+  // queryRoute.deleteRouteTable();
+  // queryGeoCoords.deleteGeoCoordenatesTable();
 
   useEffect(() => {
     const startTracking = async () => {
@@ -82,7 +95,6 @@ export default function App() {
               setTotalDistance((prevDistance) => prevDistance + distance); // Atualiza a distância total
             }
           }
-
           setCurrentLocation(newCoords);
           setRouteCoords((prevCoords) => [...prevCoords, newCoords]);
         }
@@ -91,6 +103,24 @@ export default function App() {
 
     startTracking();
   }, []);
+
+  const saveDataDataBase = async () => {
+    for (let i = 0; i < routeCoords.length; i++) {
+      const [longitude, latitude] = routeCoords[i];
+      let id_routeGeoCoords = await queryGeoCoords.insertGeoCoordenates(
+        latitude,
+        longitude
+      );
+      queryRoute.insertRoute(
+        formatDistance(totalDistance),
+        "rota",
+        id_routeGeoCoords
+      );
+      queryRoute.getRoute();
+    }
+  };
+  saveDataDataBase();
+  
 
   return (
     <View style={styles.container}>
