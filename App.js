@@ -55,7 +55,6 @@ export default function App() {
   const [routeCoords, setRouteCoords] = useState([]);
   const [currentLocation, setCurrentLocation] = useState([0, 0]);
   const [totalDistance, setTotalDistance] = useState(0); // Distância total percorrida
-  const [modalVisible, setModalVisible] = useState(false); // Controle de visibilidade do modal
 
   const queryRoute = useRoute();
   const queryGeoCoords = useGeoCoordenates();
@@ -71,11 +70,9 @@ export default function App() {
         return;
       }
 
-      // Obter localização inicial
       let location = await Location.getCurrentPositionAsync({});
       setCurrentLocation([location.coords.longitude, location.coords.latitude]);
 
-      // Começar a rastrear a posição do usuário
       Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
@@ -86,17 +83,19 @@ export default function App() {
           const { latitude, longitude } = newLocation.coords;
           const newCoords = [longitude, latitude];
 
-          if (routeCoords.length > 0) {
-            const lastCoords = routeCoords[routeCoords.length - 1];
-            const distance = haversine(lastCoords, newCoords);
+          setRouteCoords((prevCoords) => {
+            if (prevCoords.length > 0) {
+              const lastCoords = prevCoords[prevCoords.length - 1];
+              const distance = haversine(lastCoords, newCoords);
 
-            // Considerar apenas distâncias maiores que 1 metro para evitar pequenos erros de precisão
-            if (distance > 1) {
-              setTotalDistance((prevDistance) => prevDistance + distance); // Atualiza a distância total
+              if (distance > 1) {
+                setTotalDistance((prevDistance) => prevDistance + distance);
+              }
             }
-          }
+            return [...prevCoords, newCoords];
+          });
+
           setCurrentLocation(newCoords);
-          setRouteCoords((prevCoords) => [...prevCoords, newCoords]);
         }
       );
     };
@@ -120,7 +119,6 @@ export default function App() {
     }
   };
   saveDataDataBase();
-  
 
   return (
     <View style={styles.container}>
