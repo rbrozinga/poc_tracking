@@ -8,11 +8,13 @@ const db = SQLite.openDatabaseSync("rotas.db");
 import { useDatabase } from "./useDatabase";
 import { useRoute } from "./rotasDb";
 import { useGeoCoordenates } from "./rotasDb";
-import TrackingsBackground from "./TrackingsBackground";
+import * as TaskManager from "expo-task-manager";
 
 Mapbox.setAccessToken(
   "pk.eyJ1IjoiZGFuaWxvbWlndWVsMTQ4NSIsImEiOiJjbGZwYzg2ZzQwdW0yM3FwdG91Z3BoZXVtIn0.FOkbq1V7d5cjKTXgyTQVuQ"
 );
+
+const LOCATION_TASK_NAME = "background-location-task";
 
 // Função para calcular a distância entre duas coordenadas
 const haversine = ([lon1, lat1], [lon2, lat2]) => {
@@ -51,6 +53,19 @@ export default function App() {
   const [currentLocation, setCurrentLocation] = useState([0, 0]);
   const [totalDistance, setTotalDistance] = useState(0); // Distância total percorrida
 
+  TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }) => {
+    if (error) {
+      console.error("Erro na tarefa em segundo plano:", error);
+      return;
+    }
+    if (data) {
+      const { locations } = data;
+      startTracking();
+    } else {
+      console.log("Nenhum dado de localização recebido");
+    }
+  });
+
   const queryRoute = useRoute();
   const queryGeoCoords = useGeoCoordenates();
 
@@ -76,49 +91,96 @@ export default function App() {
   //   };
   // }, [appState]);
 
-  useEffect(() => {
-    const startTracking = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permissão de localização negada!");
-        return;
-      }
+  const requestPermission = async () => {
+    const { status: foregroundStatus } =
+      await Location.requestForegroundPermissionsAsync();
+    if (foregroundStatus !== "granted") {
+      console.log("Permissão de localização em primeiro plano não concedida");
+      return false;
+    }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setCurrentLocation([location.coords.longitude, location.coords.latitude]);
+    const { status: backgroundStatus } =
+      await Location.requestBackgroundPermissionsAsync();
+    if (backgroundStatus !== "granted") {
+      console.log("Permissão de localização em segundo plano não concedida");
+      return false;
+    }
 
-      Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 1000,
-          distanceInterval: 5,
-        },
-        (newLocation) => {
-          const { latitude, longitude } = newLocation.coords;
-          const newCoords = [longitude, latitude];
-
-          setRouteCoords((prevCoords) => {
-            if (prevCoords.length > 0) {
-              const lastCoords = prevCoords[prevCoords.length - 1];
-              const distance = haversine(lastCoords, newCoords);
-
-              if (distance > 1) {
-                setTotalDistance((prevDistance) => prevDistance + distance);
-              }
-            }
-            return [...prevCoords, newCoords];
-          });
-
-          setCurrentLocation(newCoords);
-        }
-      );
-    };
+    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+      accuracy: Location.Accuracy.Highest,
+      distanceInterval: 0,
+      deferredUpdatesInterval: 1000,
+      foregroundService: {
+        notificationTitle: "Rota em andamento",
+        notificationBody: "Realização de rota em segundo plano...",
+        notificationColor: "#FFFFFF",
+      },
+    });
     startTracking();
+    console.log("Tarefa de localização em segundo plano iniciada");
+
+    const { status: notificationStatus } =
+      await Notifications.requestPermissionsAsync();
+    if (notificationStatus !== "granted") {
+      console.log("Permissão de notificações não concedida");
+      return false;
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    const startBackgroundLocation = async () => {
+      await requestPermission();
+    };
+    startBackgroundLocation();
   }, []);
+
+  const startTracking = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permissão de localização negada!");
+      return;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    setCurrentLocation([location.coords.longitude, location.coords.latitude]);
+
+    Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.High,
+        timeInterval: 1000,
+        distanceInterval: 5,
+      },
+      (newLocation) => {
+        const { latitude, longitude } = newLocation.coords;
+        const newCoords = [longitude, latitude];
+
+        setRouteCoords((prevCoords) => {
+          if (prevCoords.length > 0) {
+            const lastCoords = prevCoords[prevCoords.length - 1];
+            const distance = haversine(lastCoords, newCoords);
+
+            if (distance > 1) {
+              setTotalDistance((prevDistance) => prevDistance + distance);
+            }
+          }
+          return [...prevCoords, newCoords];
+        });
+
+        setCurrentLocation(newCoords);
+      }
+    );
+  };
+
+  // useEffect(() => {
+  //   startTracking();
+  // }, []);
 
   const saveDataBase = async () => {
     for (let i = 0; i < routeCoords.length; i++) {
       const [longitude, latitude] = routeCoords[i];
+      const coordsString = JSON.stringify(routeCoords);
+      // console.log("coords", coordsString);
       let id_routeGeoCoords = await queryGeoCoords.insertGeoCoordenates(
         latitude,
         longitude
@@ -126,7 +188,8 @@ export default function App() {
       queryRoute.insertRoute(
         formatDistance(totalDistance),
         "rota",
-        id_routeGeoCoords
+        id_routeGeoCoords,
+        coordsString
       );
       queryRoute.getRoute();
     }
@@ -184,7 +247,11 @@ export default function App() {
           </View>
         </View>
       </View>
-      <TrackingsBackground />
+      {/* <TrackingsBackground 
+      startTracking={startTracking} 
+      saveDataBase={saveDataBase} 
+      routeCoords={routeCoords} 
+      totalDistance={totalDistance}/> */}
     </>
   );
 }

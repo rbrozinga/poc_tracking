@@ -9,6 +9,7 @@ export async function createRouteTable() {
           data_route DATETIME DEFAULT CURRENT_TIMESTAMP,
           title TEXT,
           distance DOUBLE,
+          geo_coordinates VARCHAR,
           id_routeGeoCoords INTEGER,
           FOREIGN KEY (id_routeGeoCoords) REFERENCES geoCoordenates(id_route) ON DELETE CASCADE ON UPDATE CASCADE
         );
@@ -97,16 +98,17 @@ export function useGeoCoordenates() {
 }
 
 export function useRoute() {
-  async function insertRoute(distance, title, id_routeGeoCoords) {
+  async function insertRoute(distance, title, id_routeGeoCoords, geo_coordinates) {
     try {
       const statement = await db.prepareAsync(
-        "INSERT INTO route(title,distance, id_routeGeoCoords) VALUES (?,?,?)"
+        "INSERT INTO route(title,distance, id_routeGeoCoords, geo_coordinates) VALUES (?,?,?,?)"
       );
 
       const result = await statement.executeAsync([
         title,
         distance,
         id_routeGeoCoords,
+        geo_coordinates
       ]);
 
       console.log("Resultado da inserção na tabela rotas:", result);
