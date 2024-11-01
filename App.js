@@ -1,19 +1,14 @@
 import React, { useEffect, useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Alert,
-  Modal,
-  Text,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, View, Alert, Text, AppState } from "react-native";
 import Mapbox from "@rnmapbox/maps";
+import * as Notifications from "expo-notifications";
 import * as Location from "expo-location";
 import * as SQLite from "expo-sqlite";
 const db = SQLite.openDatabaseSync("rotas.db");
 import { useDatabase } from "./useDatabase";
 import { useRoute } from "./rotasDb";
 import { useGeoCoordenates } from "./rotasDb";
+import TrackingsBackground from "./TrackingsBackground";
 
 Mapbox.setAccessToken(
   "pk.eyJ1IjoiZGFuaWxvbWlndWVsMTQ4NSIsImEiOiJjbGZwYzg2ZzQwdW0yM3FwdG91Z3BoZXVtIn0.FOkbq1V7d5cjKTXgyTQVuQ"
@@ -51,7 +46,7 @@ const formatDistance = (distance) => {
 
 export default function App() {
   const db = SQLite.openDatabaseSync("rotas.db");
-  const dataBase = useDatabase(db);
+  // const dataBase = useDatabase(db);
   const [routeCoords, setRouteCoords] = useState([]);
   const [currentLocation, setCurrentLocation] = useState([0, 0]);
   const [totalDistance, setTotalDistance] = useState(0); // Distância total percorrida
@@ -62,6 +57,25 @@ export default function App() {
 
   // queryRoute.deleteRouteTable();
   // queryGeoCoords.deleteGeoCoordenatesTable();
+
+  // manipular o botão de home
+  // useEffect(() => {
+  //   const subscription = AppState.addEventListener("change", (nextAppState) => {
+  //     if (nextAppState === "background") {
+  //       console.log("O aplicativo entrou em segundo plano.");
+  //     }
+
+  //     // if (appState.match(/inactive|background/) && nextAppState === "active") {
+  //     //   console.log("O aplicativo voltou ao primeiro plano!");
+  //     // }
+
+  //     setAppState(nextAppState);
+  //   });
+
+  //   return () => {
+  //     subscription.remove();
+  //   };
+  // }, [appState]);
 
   useEffect(() => {
     const startTracking = async () => {
@@ -100,11 +114,10 @@ export default function App() {
         }
       );
     };
-
     startTracking();
   }, []);
 
-  const saveDataDataBase = async () => {
+  const saveDataBase = async () => {
     for (let i = 0; i < routeCoords.length; i++) {
       const [longitude, latitude] = routeCoords[i];
       let id_routeGeoCoords = await queryGeoCoords.insertGeoCoordenates(
@@ -119,63 +132,70 @@ export default function App() {
       queryRoute.getRoute();
     }
   };
-  saveDataDataBase();
-  
+  // saveDataBase();
 
   return (
-    <View style={styles.container}>
-      <Mapbox.MapView style={styles.map} styleURL={Mapbox.StyleURL.Satellite}>
-        <Mapbox.Camera
-          zoomLevel={15}
-          centerCoordinate={currentLocation}
-          followUserMode="normal"
-        />
+    <>
+      <View style={styles.container}>
+        <Mapbox.MapView style={styles.map} styleURL={Mapbox.StyleURL.Satellite}>
+          <Mapbox.Camera
+            zoomLevel={15}
+            centerCoordinate={currentLocation}
+            followUserMode="normal"
+          />
 
-        {/* localização atual do usuário */}
-        {currentLocation && (
-          <Mapbox.PointAnnotation
-            key="current-location"
-            id="current-location"
-            coordinate={currentLocation}
-          >
-            <View style={styles.annotationContainer} />
-            <Mapbox.Callout title="Você está aqui!" />
-          </Mapbox.PointAnnotation>
-        )}
+          {/* localização atual do usuário */}
+          {currentLocation && (
+            <Mapbox.PointAnnotation
+              key="current-location"
+              id="current-location"
+              coordinate={currentLocation}
+            >
+              <View style={styles.annotationContainer} />
+              <Mapbox.Callout title="Você está aqui!" />
+            </Mapbox.PointAnnotation>
+          )}
 
-        {/* Desenha a linha da rota */}
-        {routeCoords.length > 1 && (
-          <Mapbox.ShapeSource
-            id="routeSource"
-            shape={{
-              type: "LineString",
-              coordinates: routeCoords,
-            }}
-          >
-            <Mapbox.LineLayer
-              id="routeLine"
-              style={{
-                lineWidth: 4,
-                lineColor: "blue",
+          {/* Desenha a linha da rota */}
+          {routeCoords.length > 1 && (
+            <Mapbox.ShapeSource
+              id="routeSource"
+              shape={{
+                type: "LineString",
+                coordinates: routeCoords,
               }}
-            />
-          </Mapbox.ShapeSource>
-        )}
-      </Mapbox.MapView>
+            >
+              <Mapbox.LineLayer
+                id="routeLine"
+                style={{
+                  lineWidth: 4,
+                  lineColor: "blue",
+                }}
+              />
+            </Mapbox.ShapeSource>
+          )}
+        </Mapbox.MapView>
 
-      {/* Modal que exibe a distância */}
-      <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          <Text style={styles.cardText}>
-            Distância Percorrida: {formatDistance(totalDistance)}
-          </Text>
+        {/* Modal que exibe a distância */}
+        <View style={styles.cardContainer}>
+          <View style={styles.card}>
+            <Text style={styles.cardText}>
+              Distância Percorrida: {formatDistance(totalDistance)}
+            </Text>
+          </View>
         </View>
       </View>
-    </View>
+      <TrackingsBackground />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  pipContainer: {
+    width: 140,
+    height: 240,
+  },
+
   container: {
     flex: 1,
   },

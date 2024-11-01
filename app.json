@@ -19,7 +19,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.richardbrozz.tracking"
+      "permissions": [ "ACCESS_COARSE_LOCATION","ACCESS_BACKGROUND_LOCATION", "ACCESS_FINE_LOCATION",  "FOREGROUND_SERVICE"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,7 +31,19 @@
           "RNMapboxMapsImpl": "mapbox",
           "RNMapboxMapsDownloadToken": "sk.eyJ1IjoiZGFuaWxvbWlndWVsMTQ4NSIsImEiOiJjbGZyMGI4YmMwMGt3M3VrOHIwYzNyZ2VhIn0.uu2FELZlU70-C20DvGNl7w"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6f58aeaf-b57f-479c-998a-860ff49161f9"
+      }
+    }
   }
 }
