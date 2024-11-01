@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "tracking",
-    "slug": "tracking",
+    "slug": "poc-tracking",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -42,8 +42,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "6f58aeaf-b57f-479c-998a-860ff49161f9"
+        "projectId": "a8ddafc8-f897-4988-afdc-7f03b2a9e5a7"
       }
-    }
+    },
+    "owner": "cromai"
   }
 }
